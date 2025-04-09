@@ -26,7 +26,7 @@ public class HelloControllerTest {
         // Now fixed to pass with the correct expected content
         mockMvc.perform(MockMvcRequestBuilders.get("/hello"))
                 .andExpect(MockMvcResultMatchers.status().isOk())
-                .andExpect(MockMvcResultMatchers.content().string("Hello, World!"));
+                 .andExpect(MockMvcResultMatchers.content().string("Hello, World!"));
     }
 
     @Test

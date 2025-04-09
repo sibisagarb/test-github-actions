@@ -3,11 +3,10 @@ name: Spring Boot CI/CD
 on:
   push:
     branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
+ 
 
 jobs:
-  build:
+  compile:
     runs-on: ubuntu-latest
     permissions:
       checks: write
@@ -15,31 +14,24 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
+
     - name: Set up JDK 21
       uses: actions/setup-java@v4
       with:
         java-version: '21'
         distribution: 'temurin'
         cache: maven
-    - name: Build with Maven
-      run: mvn -B package --file pom.xml
-    - name: Test
-      run: mvn test
-    - name: Publish Test Report
-      uses: mikepenz/action-junit-report@v5
-      if: always() # always run even if tests fail
-      with:
-        report_paths: '**/target/surefire-reports/TEST-*.xml'
-        detailed_summary: true
-        include_passed: true
-        fail_on_failure: false
+
+    - name: Compile with Maven
+      run: mvn compile   
 
   security-check:
-      needs: [build]
+      needs: [compile]
       runs-on: ubuntu-latest
 
       steps:
         - uses: actions/checkout@v4
+
         - name: Trivy Installation
           run: |
             sudo apt-get install -y wget apt-transport-https gnupg lsb-release
@@ -48,3 +40,31 @@ jobs:
             sudo apt-get update -y
             sudo apt-get install -y trivy
 
+        - name: Trivy FS Scan
+          run: trivy fs --format table -o fs-report.json .
+
+        - name: Gitleaks Installation
+          run: |
+            sudo apt install -y gitleaks
+
+        - name: Gitleaks Scan
+          run: gitleaks detect source . -r gitleaks-report.json -f json 
+
+  test:
+    needs: security-check
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Test
+        run: mvn test
+
+      - name: Publish Test Report
+        uses: mikepenz/action-junit-report@v5
+        if: always() # always run even if tests fail
+        with:
+          report_paths: '**/target/surefire-reports/TEST-*.xml'
+          detailed_summary: true
+          include_passed: true
+          fail_on_failure: false
