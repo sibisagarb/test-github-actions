@@ -15,8 +15,9 @@ jobs:
       with:
         java-version: '21'
         distribution: 'temurin'
-    - run: java Test.java
-    
+    - name: Running Test.java File
+      run: java Test.java
+
     #     cache: maven
     # - name: Build with Maven
     #   run: mvn -B package --file pom.xml
